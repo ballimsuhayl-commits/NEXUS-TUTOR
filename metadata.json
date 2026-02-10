@@ -1,0 +1,7 @@
+{
+  "name": "IEB Grade 11 Nexus",
+  "description": "A holistic AI tutor, psychologist, and educational consultant for Grade 11 IEB students covering Maths, Physics, and Business Economics.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
