@@ -6,19 +6,24 @@ import { INITIAL_SYSTEM_INSTRUCTION, IEB_SYLLABUS, CORE_DIAGRAMS } from '../cons
 const getStoredKey = () => {
   // Check localStorage first (Admin set), then environment variable (Build set)
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('gemini_api_key') || process.env.API_KEY || '';
+    const localKey = localStorage.getItem('gemini_api_key');
+    if (localKey && localKey.trim().length > 0) return localKey;
+    
+    if (process.env.API_KEY && process.env.API_KEY.trim().length > 0) return process.env.API_KEY;
   }
-  return process.env.API_KEY || '';
+  return '';
 };
 
 // Export 'ai' as a mutable let binding so it can be updated
-export let ai = new GoogleGenAI({ apiKey: getStoredKey() });
+// We initialize with a placeholder if empty to avoid immediate crash, but requests will fail until key is set
+export let ai = new GoogleGenAI({ apiKey: getStoredKey() || "PLACEHOLDER_KEY" });
 
 export const setStoredApiKey = (key: string) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('gemini_api_key', key);
   }
   // Re-initialize the client with the new key
+  console.log("Re-initializing Gemini client with new key");
   ai = new GoogleGenAI({ apiKey: key });
 };
 
@@ -79,6 +84,7 @@ export const createChatSession = (subject: Subject, mood: Mood, studyMode: Study
     // DO NOT set maxOutputTokens when using thinking budget
   }
 
+  console.log(`Creating chat session with model: ${modelName}`);
   return ai.chats.create({
     model: modelName,
     config: chatConfig,
@@ -126,6 +132,8 @@ const generateImageForQuestion = async (prompt: string): Promise<string | undefi
 }
 
 export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Promise<Quiz> => {
+  console.log("Generating quiz for:", subject);
+  
   // Inject diagrams into quiz generation context as well
   const relevantDiagrams = CORE_DIAGRAMS[subject as keyof typeof CORE_DIAGRAMS] || {};
   const diagramsJson = JSON.stringify(relevantDiagrams);
@@ -183,6 +191,7 @@ export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Prom
 
   try {
       // Use Gemini 3 Pro for high-quality quiz generation
+      // If the key doesn't support Pro or it's rate limited, we will catch the error
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt,
@@ -196,10 +205,15 @@ export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Prom
       const text = response.text;
       if (!text) throw new Error("Empty response from quiz generator");
       
-      const quiz = JSON.parse(text) as Quiz;
+      let quiz: Quiz;
+      try {
+        quiz = JSON.parse(text) as Quiz;
+      } catch (parseError) {
+        console.error("Failed to parse quiz JSON:", text);
+        throw new Error("Received invalid JSON format from model.");
+      }
 
       // Post-process: Generate images for questions that requested them
-      // We process concurrently but limited to avoid rate limits if necessary, though Promise.all is fine for 5 items.
       const questionsWithImages = await Promise.all(quiz.questions.map(async (q: QuizQuestion) => {
         if (q.imageDescription) {
             // Generate image using Imagen
@@ -213,8 +227,12 @@ export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Prom
 
       return { ...quiz, questions: questionsWithImages };
 
-  } catch (e) {
-      console.error("Quiz generation failed", e);
+  } catch (e: any) {
+      console.error("Quiz generation failed. Full error:", e);
+      // Helpful logging for the user
+      if (e.toString().includes('403') || e.toString().includes('API key')) {
+          console.error("API Key Issue detected. Please check permissions.");
+      }
       throw e;
   }
 };
