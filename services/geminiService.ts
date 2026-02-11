@@ -12,7 +12,8 @@ const getStoredKey = () => {
 };
 
 // Export 'ai' as a mutable let binding so it can be updated
-export let ai = new GoogleGenAI({ apiKey: getStoredKey() });
+// We provide a fallback dummy key to prevent initialization errors when the key is not yet set
+export let ai = new GoogleGenAI({ apiKey: getStoredKey() || "EMPTY_API_KEY" });
 
 export const setStoredApiKey = (key: string) => {
   if (typeof window !== 'undefined') {
