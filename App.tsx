@@ -281,12 +281,13 @@ function App() {
       const data = await generateQuiz(currentSubject, studyMode);
       setQuizData(data);
       setIsQuizOpen(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate quiz", error);
+      const errorText = error.message || error.toString();
       const errorMsg: Message = {
         id: Date.now().toString(),
         role: Role.MODEL,
-        text: "I couldn't generate a quiz right now. Please check your API Key in settings.",
+        text: `I couldn't generate a quiz right now. \n\n**Error Details:** ${errorText}\n\nPlease check your API Key permissions and try again.`,
         timestamp: new Date(),
         isError: true
       };
