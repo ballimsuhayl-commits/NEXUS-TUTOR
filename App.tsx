@@ -8,7 +8,7 @@ import QuizModal from './components/QuizModal';
 import SettingsModal from './components/SettingsModal';
 import ReviewModal from './components/ReviewModal';
 import { Message, Role, Subject, Mood, Quiz, StudyMode, Flashcard, AppSettings, ModelMode } from './types';
-import { createChatSession, sendMessageToGemini, ai, generateQuiz, hasValidKey } from './services/geminiService';
+import { createChatSession, sendMessageToGemini, getAi, generateQuiz, hasValidKey } from './services/geminiService';
 import { SUBJECT_CONFIG, INITIAL_SYSTEM_INSTRUCTION, IEB_SYLLABUS } from './constants';
 import { arrayBufferToBase64, base64ToUint8Array, decodeAudioData, float32To16BitPCM, downsampleBuffer } from './utils/audioUtils';
 import { INITIAL_FLASHCARD_STATE, calculateSRS, getDueCards } from './utils/srs';
@@ -151,7 +151,7 @@ function App() {
         const g12Syllabus = IEB_SYLLABUS[currentSubject].g12;
 
         const config = {
-            model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+            model: 'gemini-2.0-flash-exp',
             config: {
                 responseModalities: [Modality.AUDIO],
                 speechConfig: {
@@ -166,7 +166,7 @@ function App() {
             }
         };
 
-        const sessionPromise = ai.live.connect({
+        const sessionPromise = getAi().live.connect({
             model: config.model,
             config: config.config,
             callbacks: {
@@ -192,7 +192,8 @@ function App() {
 
                         // Convert to 16-bit PCM
                         const pcm16 = float32To16BitPCM(resampledData);
-                        const base64Data = arrayBufferToBase64(pcm16.buffer);
+                        // Cast buffer to any to avoid SharedArrayBuffer vs ArrayBuffer conflict in some TS environments
+                        const base64Data = arrayBufferToBase64(pcm16.buffer as any);
                         
                         sessionPromise.then(session => {
                             session.sendRealtimeInput({
@@ -281,12 +282,12 @@ function App() {
       const data = await generateQuiz(currentSubject, studyMode);
       setQuizData(data);
       setIsQuizOpen(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate quiz", error);
       const errorMsg: Message = {
         id: Date.now().toString(),
         role: Role.MODEL,
-        text: "I couldn't generate a quiz right now. Please check your API Key in settings.",
+        text: `**Quiz Generation Failed:** ${error.message || "Please check your API Key in settings."}`,
         timestamp: new Date(),
         isError: true
       };
@@ -374,12 +375,12 @@ function App() {
       };
       
       setMessages(prev => [...prev, aiMsg]);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: Role.MODEL,
-        text: "I encountered an error. Please check your internet connection or API Key.",
+        text: `**Error:** ${error.message || "I encountered an error. Please check your internet connection or API Key."}`,
         timestamp: new Date(),
         isError: true
       };

@@ -11,16 +11,21 @@ const getStoredKey = () => {
   return process.env.API_KEY || '';
 };
 
-// Export 'ai' as a mutable let binding so it can be updated
-// We provide a fallback dummy key to prevent initialization errors when the key is not yet set
-export let ai = new GoogleGenAI({ apiKey: getStoredKey() || "EMPTY_API_KEY" });
+// Internal instance that can be updated
+let aiInstance = new GoogleGenAI({ apiKey: getStoredKey() || "EMPTY_API_KEY" });
+
+// Export a getter to ensure we always use the latest instance
+export const getAi = () => aiInstance;
+
+// Deprecated export for backward compatibility, will still point to current instance but getAi() is preferred
+export { aiInstance as ai };
 
 export const setStoredApiKey = (key: string) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('gemini_api_key', key);
   }
   // Re-initialize the client with the new key
-  ai = new GoogleGenAI({ apiKey: key });
+  aiInstance = new GoogleGenAI({ apiKey: key });
 };
 
 export const hasValidKey = () => {
@@ -47,40 +52,40 @@ export const createChatSession = (subject: Subject, mood: Mood, studyMode: Study
     .replace('{CORE_DIAGRAMS_KEYS}', diagramKeys)
     .replace('{CORE_DIAGRAMS_JSON}', diagramsJson);
 
-  let modelName = 'gemini-3-flash-preview'; // Default fallback
+  let modelName = 'gemini-1.5-flash'; // Standardized models
   let thinkingBudget = 0;
 
   switch (modelMode) {
     case ModelMode.FAST:
-      modelName = 'gemini-flash-lite-latest';
+      modelName = 'gemini-1.5-flash';
       thinkingBudget = 0;
       break;
     case ModelMode.BALANCED:
-      modelName = 'gemini-3-flash-preview'; // Standard Flash
+      modelName = 'gemini-1.5-flash';
       thinkingBudget = 0;
       break;
     case ModelMode.SMART:
-      modelName = 'gemini-3-pro-preview';
+      modelName = 'gemini-1.5-pro';
       thinkingBudget = 0;
       break;
     case ModelMode.DEEP:
-      modelName = 'gemini-3-pro-preview';
-      thinkingBudget = 32768; // Max thinking budget for Pro
+      // Using 2.0 Thinking model for deep mode if supported, otherwise Pro
+      modelName = 'gemini-2.0-flash-thinking-exp-1219';
+      thinkingBudget = 32768;
       break;
     default:
-      modelName = 'gemini-3-flash-preview';
+      modelName = 'gemini-1.5-flash';
   }
 
   const chatConfig: any = {
     systemInstruction: instruction,
   };
 
-  if (thinkingBudget > 0) {
+  if (thinkingBudget > 0 && modelName.includes('thinking')) {
     chatConfig.thinkingConfig = { thinkingBudget };
-    // DO NOT set maxOutputTokens when using thinking budget
   }
 
-  return ai.chats.create({
+  return getAi().chats.create({
     model: modelName,
     config: chatConfig,
   });
@@ -102,16 +107,18 @@ export const sendMessageToGemini = async (
     });
 
     return result.text || "I'm having trouble processing that right now. Let's try again.";
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
-    throw error;
+    // Extract more meaningful error message if possible
+    const errorMsg = error.message || "An unknown error occurred with the Gemini API.";
+    throw new Error(errorMsg);
   }
 };
 
 const generateImageForQuestion = async (prompt: string): Promise<string | undefined> => {
   try {
-    const response = await ai.models.generateImages({
-      model: 'imagen-4.0-generate-001',
+    const response = await getAi().models.generateImages({
+      model: 'imagen-3.0-generate-001', // Standardized model
       prompt: `Educational scientific textbook illustration, clear line art or diagram style, white background, high detail: ${prompt}`,
       config: {
         numberOfImages: 1,
@@ -183,9 +190,9 @@ export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Prom
   Make the 'explanation' rich and encouraging.`;
 
   try {
-      // Use Gemini 3 Pro for high-quality quiz generation
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+      // Use Gemini 1.5 Pro for high-quality quiz generation
+      const response = await getAi().models.generateContent({
+        model: 'gemini-1.5-pro',
         contents: prompt,
         config: {
             responseMimeType: 'application/json',
@@ -214,8 +221,9 @@ export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Prom
 
       return { ...quiz, questions: questionsWithImages };
 
-  } catch (e) {
-      console.error("Quiz generation failed", e);
-      throw e;
+  } catch (error: any) {
+      console.error("Quiz generation failed", error);
+      const errorMsg = error.message || "I couldn't generate a quiz right now. Please check your API Key or try again later.";
+      throw new Error(errorMsg);
   }
 };
