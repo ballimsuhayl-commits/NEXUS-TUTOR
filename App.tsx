@@ -192,7 +192,7 @@ function App() {
 
                         // Convert to 16-bit PCM
                         const pcm16 = float32To16BitPCM(resampledData);
-                        const base64Data = arrayBufferToBase64(pcm16.buffer as ArrayBuffer);
+                        const base64Data = arrayBufferToBase64(pcm16.buffer);
                         
                         sessionPromise.then(session => {
                             session.sendRealtimeInput({
