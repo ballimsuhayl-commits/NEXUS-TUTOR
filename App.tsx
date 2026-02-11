@@ -14,7 +14,6 @@ import { arrayBufferToBase64, base64ToUint8Array, decodeAudioData, float32To16Bi
 import { INITIAL_FLASHCARD_STATE, calculateSRS, getDueCards } from './utils/srs';
 
 function App() {
-  console.log("Nexus Deployment V3.1 - Type Fix Active");
   const [currentSubject, setCurrentSubject] = useState<Subject>(Subject.GENERAL);
   const [mood, setMood] = useState<Mood>(Mood.NEUTRAL);
   const [studyMode, setStudyMode] = useState<StudyMode>(StudyMode.STANDARD);
