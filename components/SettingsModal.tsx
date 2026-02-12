@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { X, Save, Trash2, Key, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Save, Trash2, Key, ShieldCheck, Check } from 'lucide-react';
 import { AppSettings } from '../types';
-import { setStoredApiKey } from '../services/geminiService';
+import { setStoredApiKey, hasValidKey } from '../services/geminiService';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -20,6 +20,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [keySaved, setKeySaved] = useState(false);
+  const [hasExistingKey, setHasExistingKey] = useState(false);
+  const [isEditingKey, setIsEditingKey] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setHasExistingKey(hasValidKey());
+      // If no key exists, default to editing mode
+      if (!hasValidKey()) {
+        setIsEditingKey(true);
+      } else {
+        setIsEditingKey(false);
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -27,6 +41,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     if (apiKeyInput.trim()) {
       setStoredApiKey(apiKeyInput.trim());
       setKeySaved(true);
+      setHasExistingKey(true);
+      setIsEditingKey(false);
+      setApiKeyInput(''); // Clear input for security
       setTimeout(() => setKeySaved(false), 3000);
     }
   };
@@ -44,35 +61,75 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="p-6 space-y-8 overflow-y-auto">
           
           {/* Admin Section */}
-          <div className="space-y-4 bg-blue-50 p-5 rounded-xl border border-blue-100">
+          <div className={`space-y-4 p-5 rounded-xl border transition-all duration-300 ${hasExistingKey ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
             <div className="flex items-center gap-2">
-               <ShieldCheck size={18} className="text-blue-600" />
-               <h3 className="text-sm font-bold text-blue-800 uppercase tracking-wider">Admin: API Setup</h3>
+               {hasExistingKey ? <ShieldCheck size={18} className="text-green-600" /> : <ShieldCheck size={18} className="text-blue-600" />}
+               <h3 className={`text-sm font-bold uppercase tracking-wider ${hasExistingKey ? 'text-green-800' : 'text-blue-800'}`}>
+                 Admin: API Setup
+               </h3>
             </div>
             
-            <p className="text-xs text-blue-700 leading-relaxed">
-              Enter your Google Gemini API Key here. It will be stored locally on your device. You only need to do this once.
-            </p>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-blue-900 block">API Key</label>
-              <div className="flex gap-2">
-                <input 
-                  type="password" 
-                  value={apiKeyInput}
-                  onChange={(e) => setApiKeyInput(e.target.value)}
-                  placeholder="AIzaSy..."
-                  className="flex-1 px-3 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                />
+            {!isEditingKey && hasExistingKey ? (
+              <div className="animate-in fade-in slide-in-from-left-2">
+                <div className="flex items-center gap-2 text-green-700 mb-3">
+                  <Check size={16} />
+                  <span className="text-sm font-medium">API Key is saved locally.</span>
+                </div>
                 <button 
-                  onClick={handleSaveKey}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold text-white transition-all ${keySaved ? 'bg-green-500' : 'bg-blue-600 hover:bg-blue-700'}`}
+                  onClick={() => setIsEditingKey(true)}
+                  className="text-xs text-green-600 hover:text-green-800 underline font-medium"
                 >
-                  {keySaved ? 'Saved' : 'Save'}
+                  Update Key
                 </button>
               </div>
-              {keySaved && <p className="text-xs text-green-600 font-medium mt-1">Key updated successfully!</p>}
-            </div>
+            ) : (
+              <div className="space-y-3 animate-in fade-in slide-in-from-right-2">
+                <p className={`text-xs leading-relaxed ${hasExistingKey ? 'text-green-700' : 'text-blue-700'}`}>
+                  Enter your Google Gemini API Key. It will be stored securely on this device.
+                </p>
+
+                <div className="space-y-2">
+                  <label className={`text-xs font-semibold block ${hasExistingKey ? 'text-green-900' : 'text-blue-900'}`}>
+                    API Key
+                  </label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="password" 
+                      value={apiKeyInput}
+                      onChange={(e) => setApiKeyInput(e.target.value)}
+                      placeholder="AIzaSy..."
+                      className={`flex-1 px-3 py-2 rounded-lg border focus:ring-2 outline-none text-sm transition-all ${
+                        hasExistingKey 
+                        ? 'border-green-200 focus:ring-green-500 bg-white' 
+                        : 'border-blue-200 focus:ring-blue-500 bg-white'
+                      }`}
+                    />
+                    <button 
+                      onClick={handleSaveKey}
+                      className={`px-4 py-2 rounded-lg text-sm font-bold text-white transition-all shadow-sm ${
+                        keySaved 
+                        ? 'bg-green-500' 
+                        : hasExistingKey ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                    >
+                      {keySaved ? 'Saved' : 'Save'}
+                    </button>
+                  </div>
+                  {hasExistingKey && (
+                    <button 
+                      onClick={() => setIsEditingKey(false)}
+                      className="text-xs text-gray-400 hover:text-gray-600 ml-1"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {keySaved && !isEditingKey && (
+               <p className="text-xs text-green-600 font-bold mt-1 animate-pulse">Key updated successfully!</p>
+            )}
           </div>
 
           <div className="space-y-4">

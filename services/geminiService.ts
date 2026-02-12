@@ -29,7 +29,7 @@ export const setStoredApiKey = (key: string) => {
 
 export const hasValidKey = () => {
   const key = getStoredKey();
-  return key && key.length > 0;
+  return key && key.length > 0 && key !== "PLACEHOLDER_KEY";
 };
 // ----------------------------------
 
@@ -115,18 +115,33 @@ export const sendMessageToGemini = async (
 
 const generateImageForQuestion = async (prompt: string): Promise<string | undefined> => {
   try {
-    const response = await ai.models.generateImages({
-      model: 'imagen-4.0-generate-001',
-      prompt: `Educational scientific textbook illustration, clear line art or diagram style, white background, high detail: ${prompt}`,
+    // Using Gemini 3 Pro Image Preview for better integration and quality
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-image-preview',
+      contents: {
+        parts: [
+          { text: `Educational scientific textbook illustration, clear line art or diagram style, white background, high detail: ${prompt}` }
+        ]
+      },
       config: {
-        numberOfImages: 1,
-        outputMimeType: 'image/jpeg',
-        aspectRatio: '4:3',
+        imageConfig: {
+            aspectRatio: "4:3",
+            imageSize: "1K"
+        }
       },
     });
-    return response.generatedImages?.[0]?.image?.imageBytes;
+
+    // Extract image part safely
+    if (response.candidates?.[0]?.content?.parts) {
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData && part.inlineData.data) {
+                return part.inlineData.data;
+            }
+        }
+    }
+    return undefined;
   } catch (e) {
-    console.warn("Imagen generation failed, falling back to text only", e);
+    console.warn("Image generation failed", e);
     return undefined;
   }
 }
@@ -149,7 +164,7 @@ export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Prom
           properties: {
             question: { type: Type.STRING },
             diagram: { type: Type.STRING, description: "Optional Mermaid.js diagram code. YOU MAY COPY from {CORE_DIAGRAMS_JSON} if relevant." },
-            imageDescription: { type: Type.STRING, description: "Prompt for Imagen to generate a scientific illustration (e.g., 'Labeled diagram of a chloroplast'). Use this for structural diagrams." },
+            imageDescription: { type: Type.STRING, description: "Prompt for the image model to generate a scientific illustration (e.g., 'Labeled diagram of a chloroplast'). Use this for structural diagrams." },
             options: { type: Type.ARRAY, items: { type: Type.STRING } },
             correctAnswerIndex: { type: Type.INTEGER },
             explanation: { type: Type.STRING },
@@ -191,7 +206,6 @@ export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Prom
 
   try {
       // Use Gemini 3 Pro for high-quality quiz generation
-      // If the key doesn't support Pro or it's rate limited, we will catch the error
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt,
@@ -216,7 +230,7 @@ export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Prom
       // Post-process: Generate images for questions that requested them
       const questionsWithImages = await Promise.all(quiz.questions.map(async (q: QuizQuestion) => {
         if (q.imageDescription) {
-            // Generate image using Imagen
+            // Generate image
             const imageBytes = await generateImageForQuestion(q.imageDescription);
             if (imageBytes) {
                 return { ...q, generatedImage: imageBytes };
