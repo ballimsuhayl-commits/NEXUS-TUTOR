@@ -46,16 +46,16 @@ export const createChatSession = (subject: Subject, mood: Mood, studyMode: Study
     .replace('{CORE_DIAGRAMS_KEYS}', diagramKeys)
     .replace('{CORE_DIAGRAMS_JSON}', diagramsJson);
 
-  let modelName = 'gemini-3-flash-preview'; // Default fallback
+  let modelName = 'gemini-2.5-flash'; // Default fallback
   let thinkingBudget = 0;
 
   switch (modelMode) {
     case ModelMode.FAST:
-      modelName = 'gemini-flash-lite-latest';
+      modelName = 'gemini-2.5-flash';
       thinkingBudget = 0;
       break;
     case ModelMode.BALANCED:
-      modelName = 'gemini-3-flash-preview'; // Standard Flash
+      modelName = 'gemini-2.5-flash'; // Standard Flash
       thinkingBudget = 0;
       break;
     case ModelMode.SMART:
@@ -67,7 +67,7 @@ export const createChatSession = (subject: Subject, mood: Mood, studyMode: Study
       thinkingBudget = 32768; // Max thinking budget for Pro
       break;
     default:
-      modelName = 'gemini-3-flash-preview';
+      modelName = 'gemini-2.5-flash';
   }
 
   const chatConfig: any = {
