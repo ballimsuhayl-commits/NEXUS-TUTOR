@@ -151,7 +151,7 @@ function App() {
         const g12Syllabus = IEB_SYLLABUS[currentSubject].g12;
 
         const config = {
-            model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+            model: 'gemini-live-2.5-flash-preview',
             config: {
                 responseModalities: [Modality.AUDIO],
                 speechConfig: {
