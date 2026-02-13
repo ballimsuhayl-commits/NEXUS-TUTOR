@@ -36,8 +36,8 @@ export enum StudyMode {
 
 export enum ModelMode {
   FAST = 'Lightning (Flash Lite)',
-  BALANCED = 'Standard (Flash 2.5)',
-  SMART = 'Smart (Pro 3)',
+  BALANCED = 'Standard (Gemini 3 Flash)',
+  SMART = 'Smart (Gemini 3 Pro)',
   DEEP = 'Deep Thinker (Pro 3 + Thinking)'
 }
 

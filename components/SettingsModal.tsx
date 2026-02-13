@@ -25,7 +25,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setHasExistingKey(hasValidKey());
+      setHasExistingKey(!!hasValidKey());
       // If no key exists, default to editing mode
       if (!hasValidKey()) {
         setIsEditingKey(true);

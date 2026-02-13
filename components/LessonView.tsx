@@ -3,8 +3,7 @@ import { Subject, Topic, Module, StudyMode } from '../types';
 import { CURRICULUM, SUBJECT_CONFIG } from '../constants';
 import { generateLesson } from '../services/geminiService';
 import MarkdownRenderer from './MarkdownRenderer';
-import { ChevronRight, ChevronDown, PlayCircle, Loader2, CheckCircle, Circle, Trophy, ArrowLeft } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { ChevronRight, ChevronDown, Loader2, CheckCircle, Circle, Trophy, ArrowLeft, Star } from 'lucide-react';
 
 interface LessonViewProps {
   currentSubject: Subject;
@@ -24,6 +23,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   const [lessonContent, setLessonContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const config = SUBJECT_CONFIG[currentSubject];
   const curriculum = CURRICULUM[currentSubject];
@@ -50,18 +50,21 @@ const LessonView: React.FC<LessonViewProps> = ({
   const handleBackToCurriculum = () => {
     setActiveTopic(null);
     setLessonContent(null);
+    setShowCelebration(false);
   };
 
   const handleClaimMastery = (topicId: string) => {
     const isNowComplete = !completedTopics.includes(topicId);
     onToggleTopicCompletion(topicId);
+    
     if (isNowComplete) {
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.8 },
-            colors: ['#2563eb', '#10b981', '#f59e0b']
-        });
+        // Trigger internal celebration state
+        setShowCelebration(true);
+        // Automatically go back after celebration
+        setTimeout(() => {
+            handleBackToCurriculum();
+        }, 2500);
+    } else {
         handleBackToCurriculum();
     }
   };
@@ -78,7 +81,26 @@ const LessonView: React.FC<LessonViewProps> = ({
       const isComplete = completedTopics.includes(activeTopic.id);
       
       return (
-          <div className="h-full flex flex-col bg-white">
+          <div className="h-full flex flex-col bg-white relative">
+              {/* Internal Mastery Overlay - No external libs needed */}
+              {showCelebration && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/95 backdrop-blur-sm animate-in fade-in duration-500">
+                    <div className="text-center">
+                        <div className="relative inline-block">
+                             <div className="absolute inset-0 bg-yellow-400 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                             <Trophy className="w-32 h-32 text-yellow-500 relative z-10 animate-bounce drop-shadow-lg mx-auto" />
+                        </div>
+                        <h2 className="text-4xl font-extrabold text-gray-900 mt-6 tracking-tight animate-in slide-in-from-bottom-5 duration-700">Topic Mastered!</h2>
+                        <div className="flex justify-center gap-2 mt-4 text-yellow-500 animate-pulse">
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                        </div>
+                        <p className="text-gray-500 mt-4 font-medium">Neural pathway encoded.</p>
+                    </div>
+                </div>
+              )}
+
               {/* Sticky Header */}
               <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white/95 backdrop-blur-sm sticky top-0 z-10">
                    <button 

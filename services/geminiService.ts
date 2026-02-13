@@ -29,7 +29,7 @@ export const setStoredApiKey = (key: string) => {
 
 export const hasValidKey = () => {
   const key = getStoredKey();
-  return key && key.length > 0 && key !== "PLACEHOLDER_KEY";
+  return !!(key && key.length > 0 && key !== "PLACEHOLDER_KEY");
 };
 // ----------------------------------
 
@@ -51,7 +51,8 @@ export const createChatSession = (subject: Subject, mood: Mood, studyMode: Study
     .replace('{CORE_DIAGRAMS_KEYS}', diagramKeys)
     .replace('{CORE_DIAGRAMS_JSON}', diagramsJson);
 
-  let modelName = 'gemini-3-flash-preview'; // Default fallback
+  // STRICT MODEL SELECTION BASED ON GOOGLE GENAI SDK GUIDELINES
+  let modelName = 'gemini-3-flash-preview'; // Default fallback (Basic Text Tasks)
   let thinkingBudget = 0;
 
   switch (modelMode) {
@@ -60,11 +61,11 @@ export const createChatSession = (subject: Subject, mood: Mood, studyMode: Study
       thinkingBudget = 0;
       break;
     case ModelMode.BALANCED:
-      modelName = 'gemini-3-flash-preview'; // Standard Flash
+      modelName = 'gemini-3-flash-preview';
       thinkingBudget = 0;
       break;
     case ModelMode.SMART:
-      modelName = 'gemini-3-pro-preview';
+      modelName = 'gemini-3-pro-preview'; // Complex Text Tasks
       thinkingBudget = 0;
       break;
     case ModelMode.DEEP:
@@ -115,7 +116,7 @@ export const sendMessageToGemini = async (
 
 const generateImageForQuestion = async (prompt: string): Promise<string | undefined> => {
   try {
-    // Using Gemini 3 Pro Image Preview for better integration and quality
+    // Using Gemini 3 Pro Image Preview for high-quality illustrations
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-image-preview',
       contents: {
@@ -253,7 +254,7 @@ export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Prom
   Make the 'explanation' rich and encouraging.`;
 
   try {
-      // Use Gemini 3 Pro for high-quality quiz generation
+      // Use Gemini 3 Pro for high-quality quiz generation (Complex Task)
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt,
@@ -278,7 +279,7 @@ export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Prom
       // Post-process: Generate images for questions that requested them
       const questionsWithImages = await Promise.all(quiz.questions.map(async (q: QuizQuestion) => {
         if (q.imageDescription) {
-            // Generate image
+            // Generate image using Gemini 3 Pro Image
             const imageBytes = await generateImageForQuestion(q.imageDescription);
             if (imageBytes) {
                 return { ...q, generatedImage: imageBytes };

@@ -9,7 +9,7 @@ import ReviewModal from './components/ReviewModal';
 import SubjectHub from './components/SubjectHub';
 import { Message, Role, Subject, Mood, Quiz, StudyMode, Flashcard, AppSettings, ModelMode, UserProgress } from './types';
 import { createChatSession, sendMessageToGemini, ai, generateQuiz, hasValidKey } from './services/geminiService';
-import { SUBJECT_CONFIG, INITIAL_SYSTEM_INSTRUCTION, IEB_SYLLABUS } from './constants';
+import { SUBJECT_CONFIG, INITIAL_SYSTEM_INSTRUCTION, IEB_SYLLABUS, CORE_DIAGRAMS } from './constants';
 import { arrayBufferToBase64, base64ToUint8Array, decodeAudioData, float32To16BitPCM, downsampleBuffer } from './utils/audioUtils';
 import { INITIAL_FLASHCARD_STATE, calculateSRS, getDueCards } from './utils/srs';
 
@@ -141,6 +141,11 @@ function App() {
         const g11Syllabus = IEB_SYLLABUS[currentSubject].g11;
         const g12Syllabus = IEB_SYLLABUS[currentSubject].g12;
 
+        // Prepare Core Diagrams Context for Voice Mode
+        const relevantDiagrams = CORE_DIAGRAMS[currentSubject as keyof typeof CORE_DIAGRAMS] || {};
+        const diagramsJson = JSON.stringify(relevantDiagrams);
+        const diagramKeys = Object.keys(relevantDiagrams).join(', ');
+
         const config = {
             model: 'gemini-2.5-flash-native-audio-preview-12-2025',
             config: {
@@ -153,7 +158,9 @@ function App() {
                     .replace('{MOOD}', mood)
                     .replace('{STUDY_MODE}', studyMode)
                     .replace('{G11_SYLLABUS}', g11Syllabus)
-                    .replace('{G12_SYLLABUS}', g12Syllabus),
+                    .replace('{G12_SYLLABUS}', g12Syllabus)
+                    .replace('{CORE_DIAGRAMS_KEYS}', diagramKeys)
+                    .replace('{CORE_DIAGRAMS_JSON}', diagramsJson),
             }
         };
 
@@ -176,7 +183,9 @@ function App() {
                         const targetRate = 16000;
                         const resampledData = downsampleBuffer(inputData, inputCtx.sampleRate, targetRate);
                         const pcm16 = float32To16BitPCM(resampledData);
-                        const base64Data = arrayBufferToBase64(pcm16.buffer);
+                        
+                        // Cast buffer to ArrayBuffer to satisfy strict TS check in some environments
+                        const base64Data = arrayBufferToBase64(pcm16.buffer as ArrayBuffer);
                         
                         sessionPromise.then(session => {
                             session.sendRealtimeInput({
