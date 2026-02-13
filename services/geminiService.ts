@@ -1,5 +1,5 @@
 import { GoogleGenAI, Chat, GenerateContentResponse, Type } from "@google/genai";
-import { Message, Role, Subject, Mood, Quiz, StudyMode, QuizQuestion, ModelMode } from '../types';
+import { Message, Role, Subject, Mood, Quiz, StudyMode, QuizQuestion, ModelMode, Topic } from '../types';
 import { INITIAL_SYSTEM_INSTRUCTION, IEB_SYLLABUS, CORE_DIAGRAMS } from '../constants';
 
 // --- Dynamic API Key Management ---
@@ -145,6 +145,54 @@ const generateImageForQuestion = async (prompt: string): Promise<string | undefi
     return undefined;
   }
 }
+
+export const generateLesson = async (subject: Subject, topic: Topic, studyMode: StudyMode): Promise<string> => {
+    // Inject diagrams into quiz generation context as well
+    const relevantDiagrams = CORE_DIAGRAMS[subject as keyof typeof CORE_DIAGRAMS] || {};
+    const diagramsJson = JSON.stringify(relevantDiagrams);
+
+    const prompt = `
+    You are an expert IEB Tutor applying Cognitive Psychology to teach.
+    Topic: "${topic.title}" (${topic.description}) for ${subject}.
+    Student Level: Grade 11 (${studyMode}).
+
+    Goal: Create a "Mental Program" for the student to master this concept. Use the Feynman Technique.
+
+    Structure the lesson strictly as follows:
+
+    ### 1. 🧠 The Hook (Priming)
+    *Start with a short, relatable analogy or real-world scenario that "primes" the brain for this specific concept. Why should they care?*
+
+    ### 2. 🧱 The Foundation (Encoding)
+    *Explain the Core Concept in simple, plain English. Use bold text for keywords. Avoid jargon unless defined immediately.*
+
+    ### 3. 👁️ Dual Coding (Visualization)
+    *Describe the mental image or diagram they should hold in their head. If a specific diagram from the library below matches, use the Mermaid code.*
+    *AVAILABLE LIBRARY: ${diagramsJson}*
+
+    ### 4. ⚓ Memory Anchor (Storage)
+    *Provide a Mnemonic, Acronym, or rhyme to lock this into long-term memory.*
+
+    ### 5. ✍️ Exam Application (Retrieval)
+    *Show a typical IEB-style question, then walk through the solution step-by-step using the method taught above.*
+
+    Tone: Encouraging, energetic, and highly structured. Use Markdown.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview', 
+            contents: prompt,
+            config: {
+                systemInstruction: "You are a cognitive coach. You do not just lecture; you program understanding."
+            }
+        });
+        return response.text || "Lesson generation incomplete.";
+    } catch (e) {
+        console.error("Lesson generation failed", e);
+        throw e;
+    }
+};
 
 export const generateQuiz = async (subject: Subject, studyMode: StudyMode): Promise<Quiz> => {
   console.log("Generating quiz for:", subject);

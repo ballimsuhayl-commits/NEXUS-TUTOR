@@ -84,3 +84,25 @@ export interface Flashcard extends QuizQuestion {
 export interface AppSettings {
   enableSRS: boolean;
 }
+
+// Curriculum Types
+export interface Topic {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export interface Module {
+  id: string;
+  title: string;
+  topics: Topic[];
+}
+
+export interface Curriculum {
+  modules: Module[];
+}
+
+// Progress Tracking
+export interface UserProgress {
+  completedTopics: string[]; // Array of Topic IDs
+}

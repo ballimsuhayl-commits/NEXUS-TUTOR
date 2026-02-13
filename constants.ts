@@ -1,4 +1,4 @@
-import { Subject, Mood, StudyMode } from './types';
+import { Subject, Mood, StudyMode, Curriculum } from './types';
 import { BookOpen, Activity, Briefcase, Zap, Brain, HeartPulse, Dna, Compass } from 'lucide-react';
 
 export const SUBJECT_CONFIG = {
@@ -92,6 +92,114 @@ export const IEB_SYLLABUS = {
     g11: "General academic support.",
     g12: "Matric final prep."
   }
+};
+
+// Curriculum Data Structure for Lessons
+export const CURRICULUM: Record<Subject, Curriculum> = {
+  [Subject.MATHS]: {
+    modules: [
+      {
+        id: 'm1', title: 'Algebra & Equations', topics: [
+          { id: 't1', title: 'Exponents & Surds', description: 'Simplifying expressions and rationalizing denominators' },
+          { id: 't2', title: 'Quadratic Equations', description: 'Factorization, Quadratic Formula, K-method' },
+          { id: 't3', title: 'Nature of Roots', description: 'Understanding Delta (Discriminant)' },
+          { id: 't4', title: 'Quadratic Inequalities', description: 'Solving inequalities using the number line or parabola method' }
+        ]
+      },
+      {
+        id: 'm2', title: 'Trigonometry', topics: [
+          { id: 't5', title: 'Reduction Formulae', description: 'CAST diagram and co-functions' },
+          { id: 't6', title: 'Trig Identities', description: 'Proving identities using square and quotient relations' },
+          { id: 't7', title: 'General Solution', description: 'Finding general solutions for trig equations' },
+          { id: 't8', title: 'Sine, Cosine & Area Rules', description: 'Solving 2D triangles' }
+        ]
+      },
+      {
+        id: 'm3', title: 'Euclidean Geometry', topics: [
+          { id: 't9', title: 'Circle Geometry: Chords', description: 'Perpendicular bisector from centre' },
+          { id: 't10', title: 'Cyclic Quadrilaterals', description: 'Properties and proofs' },
+          { id: 't11', title: 'Tangents', description: 'Tan-Chord theorem' }
+        ]
+      }
+    ]
+  },
+  [Subject.PHYSICS]: {
+    modules: [
+      {
+        id: 'p1', title: 'Mechanics', topics: [
+          { id: 'pt1', title: 'Vectors in 2D', description: 'Resultants and closed vector triangles' },
+          { id: 'pt2', title: 'Newton\'s Laws', description: '1st, 2nd, 3rd Law and Gravitation' },
+          { id: 'pt3', title: 'Friction & Slopes', description: 'Resolving forces on an inclined plane' }
+        ]
+      },
+      {
+        id: 'p2', title: 'Matter & Materials', topics: [
+          { id: 'pt4', title: 'Intermolecular Forces', description: 'Hydrogen bonds, dipole-dipole, London forces' },
+          { id: 'pt5', title: 'Ideal Gases', description: 'Gas laws and PV=nRT' },
+          { id: 'pt6', title: 'Atomic Combinations', description: 'Molecular geometry (VSEPR)' }
+        ]
+      },
+      {
+        id: 'p3', title: 'Chemical Change', topics: [
+          { id: 'pt7', title: 'Stoichiometry', description: 'Mole calculations and limiting reagents' },
+          { id: 'pt8', title: 'Energy & Change', description: 'Exothermic and Endothermic reactions' }
+        ]
+      }
+    ]
+  },
+  [Subject.BIOLOGY]: {
+    modules: [
+      {
+        id: 'b1', title: 'Diversity & Micro-organisms', topics: [
+          { id: 'bt1', title: 'Viruses & Bacteria', description: 'Structure, reproduction and diseases' },
+          { id: 'bt2', title: 'Fungi & Protists', description: 'Biological importance and roles' },
+          { id: 'bt3', title: 'Immunity', description: 'Plants and Animals immune responses' }
+        ]
+      },
+      {
+        id: 'b2', title: 'Plant Diversity', topics: [
+          { id: 'bt4', title: 'Plant Divisions', description: 'Bryophytes to Angiosperms' },
+          { id: 'bt5', title: 'Reproduction in Plants', description: 'Flowers, pollination and fertilization' }
+        ]
+      },
+      {
+        id: 'b3', title: 'Animal Nutrition', topics: [
+          { id: 'bt6', title: 'Human Digestive System', description: 'Structure and function' },
+          { id: 'bt7', title: 'Absorption & Assimilation', description: 'Role of Villi and Hepatic Portal System' }
+        ]
+      },
+       {
+        id: 'b4', title: 'Respiration', topics: [
+          { id: 'bt8', title: 'Gas Exchange Surfaces', description: 'Requirements for efficient exchange' },
+          { id: 'bt9', title: 'Human Respiratory System', description: 'Mechanism of breathing' }
+        ]
+      }
+    ]
+  },
+  [Subject.BUSINESS]: {
+    modules: [
+      {
+        id: 'bs1', title: 'Business Environments', topics: [
+          { id: 'bst1', title: 'Adapting to Challenges', description: 'Micro, Market and Macro environments' },
+          { id: 'bst2', title: 'Lobbying & Networking', description: 'Influencing the environment' }
+        ]
+      },
+      {
+        id: 'bs2', title: 'Business Ventures', topics: [
+          { id: 'bst3', title: 'Entrepreneurial Qualities', description: 'Characteristics of success' },
+          { id: 'bst4', title: 'Forms of Ownership', description: 'Sole trader to Companies' }
+        ]
+      },
+      {
+        id: 'bs3', title: 'Business Roles', topics: [
+          { id: 'bst5', title: 'Creative Thinking', description: 'Problem solving techniques' },
+          { id: 'bst6', title: 'Stress Management', description: 'Professionalism and ethics' }
+        ]
+      }
+    ]
+  },
+  [Subject.LO]: { modules: [] },
+  [Subject.GENERAL]: { modules: [] }
 };
 
 // Stored "Photographic Memory" Diagrams - BEST QUALITY, LEGIBLE, EASY TO REMEMBER
