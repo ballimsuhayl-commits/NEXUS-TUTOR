@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Subject, Message, StudyMode } from '../types';
 import ChatInterface from './ChatInterface';
 import LessonView from './LessonView';
-import { BookOpen, MessageCircle, BrainCircuit } from 'lucide-react';
+import StudyNotesGenerator from './StudyNotesGenerator';
+import { BookOpen, MessageCircle, BrainCircuit, FileText } from 'lucide-react';
 import { SUBJECT_CONFIG } from '../constants';
 
 interface SubjectHubProps {
@@ -19,7 +20,7 @@ interface SubjectHubProps {
   onToggleTopicCompletion: (topicId: string) => void;
 }
 
-type Tab = 'lessons' | 'chat' | 'quiz';
+type Tab = 'lessons' | 'chat' | 'quiz' | 'notes';
 
 const SubjectHub: React.FC<SubjectHubProps> = ({
   currentSubject,
@@ -41,39 +42,50 @@ const SubjectHub: React.FC<SubjectHubProps> = ({
     <div className="flex flex-col h-full space-y-4">
       
       {/* Tab Navigation */}
-      <div className="flex p-1 bg-gray-200/50 rounded-xl">
+      <div className="flex p-1 bg-gray-200/50 rounded-xl overflow-x-auto">
         <button
           onClick={() => setActiveTab('lessons')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${
             activeTab === 'lessons' 
               ? 'bg-white text-gray-800 shadow-sm' 
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           <BookOpen size={18} className={activeTab === 'lessons' ? config.textColor : ''} />
-          Path
+          <span className="hidden sm:inline">Path</span>
         </button>
         <button
           onClick={() => setActiveTab('chat')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${
             activeTab === 'chat' 
               ? 'bg-white text-gray-800 shadow-sm' 
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           <MessageCircle size={18} className={activeTab === 'chat' ? config.textColor : ''} />
-          Tutor
+          <span className="hidden sm:inline">Tutor</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('notes')}
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${
+            activeTab === 'notes' 
+              ? 'bg-white text-gray-800 shadow-sm' 
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <FileText size={18} className={activeTab === 'notes' ? config.textColor : ''} />
+          <span className="hidden sm:inline">Notes</span>
         </button>
         <button
           onClick={() => setActiveTab('quiz')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${
             activeTab === 'quiz' 
               ? 'bg-white text-gray-800 shadow-sm' 
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           <BrainCircuit size={18} className={activeTab === 'quiz' ? config.textColor : ''} />
-          Practice
+          <span className="hidden sm:inline">Practice</span>
         </button>
       </div>
 
@@ -96,6 +108,12 @@ const SubjectHub: React.FC<SubjectHubProps> = ({
              onSendMessage={onSendMessage}
              onToggleLive={onToggleLive}
              isLive={isLive}
+          />
+        )}
+
+        {activeTab === 'notes' && (
+          <StudyNotesGenerator 
+            currentSubject={currentSubject}
           />
         )}
 

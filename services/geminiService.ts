@@ -153,44 +153,109 @@ export const generateLesson = async (subject: Subject, topic: Topic, studyMode: 
     const diagramsJson = JSON.stringify(relevantDiagrams);
 
     const prompt = `
-    You are an expert IEB Tutor applying Cognitive Psychology to teach.
-    Topic: "${topic.title}" (${topic.description}) for ${subject}.
-    Student Level: Grade 11 (${studyMode}).
+    ROLE: Senior IEB Grade 11 Teacher.
+    SUBJECT: ${subject}
+    TOPIC: "${topic.title}" - ${topic.description}
+    LEVEL: ${studyMode}
 
-    Goal: Create a "Mental Program" for the student to master this concept. Use the Feynman Technique.
+    TASK: Deliver a **Full Classroom Lecture** on this topic. This is NOT a summary. This is the complete teaching of the concept as if you were standing at the chalkboard.
 
-    Structure the lesson strictly as follows:
+    STRUCTURE THE LESSON AS FOLLOWS (Use Markdown):
 
-    ### 1. 🧠 The Hook (Priming)
-    *Start with a short, relatable analogy or real-world scenario that "primes" the brain for this specific concept. Why should they care?*
+    # 1. Learning Intentions
+    *Briefly state what we will master today.*
 
-    ### 2. 🧱 The Foundation (Encoding)
-    *Explain the Core Concept in simple, plain English. Use bold text for keywords. Avoid jargon unless defined immediately.*
+    # 2. 🧠 Teacher's Introduction (The Hook)
+    *Connect this concept to the real world or previous knowledge to prime the brain.*
 
-    ### 3. 👁️ Dual Coding (Visualization)
-    *Describe the mental image or diagram they should hold in their head. If a specific diagram from the library below matches, use the Mermaid code.*
-    *AVAILABLE LIBRARY: ${diagramsJson}*
+    # 3. 📚 Deep Theory & Core Concepts
+    *Teach the content in FULL detail. Use bullet points, bold definitions, and clear explanations.*
+    *If this is Maths/Physics: State formulas clearly. Explain variables.*
+    *If this is Biology: Explain structure and function.*
+    
+    # 4. 👁️ Visual Aid
+    *Describe the diagram/graph students must visualize.*
+    *IF RELEVANT: Insert a Mermaid Diagram from this library: ${diagramsJson}*
 
-    ### 4. ⚓ Memory Anchor (Storage)
-    *Provide a Mnemonic, Acronym, or rhyme to lock this into long-term memory.*
+    # 5. 📝 Worked Examples (Crucial)
+    *Provide 2 distinct examples. Walk through the solution step-by-step. Explain the 'why' behind each step.*
+    
+    # 6. ⚠️ Common Pitfalls (The Examiner's Voice)
+    *Where do students lose marks in finals? Be specific.*
 
-    ### 5. ✍️ Exam Application (Retrieval)
-    *Show a typical IEB-style question, then walk through the solution step-by-step using the method taught above.*
+    # 7. ⚓ Class Summary (Memory Anchor)
+    *A quick mnemonic or rhyme to lock it in.*
 
-    Tone: Encouraging, energetic, and highly structured. Use Markdown.
+    TONE: Authoritative, Encouraging, Academic but accessible. 
+    LENGTH: Comprehensive (approx 800-1000 words).
     `;
 
     try {
+        // Use Gemini 3 Pro for comprehensive lesson generation (Thinking allowed for deep structure)
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview', 
+            model: 'gemini-3-pro-preview', 
             contents: prompt,
             config: {
-                systemInstruction: "You are a cognitive coach. You do not just lecture; you program understanding."
+                systemInstruction: "You are the best teacher in the country. You do not leave out details. You explain until the student understands.",
+                thinkingConfig: { thinkingBudget: 4000 } // Allocate thinking for structuring the lesson
             }
         });
         return response.text || "Lesson generation incomplete.";
     } catch (e) {
         console.error("Lesson generation failed", e);
+        throw e;
+    }
+};
+
+export const generateExamCheatSheet = async (subject: Subject, examContext: string, topic: string): Promise<string> => {
+    const relevantDiagrams = CORE_DIAGRAMS[subject as keyof typeof CORE_DIAGRAMS] || {};
+    const diagramsJson = JSON.stringify(relevantDiagrams);
+
+    const prompt = `
+    ROLE: Senior IEB Grade 11 Examiner.
+    SUBJECT: ${subject}
+    CONTEXT: ${examContext} (e.g., Paper 1, Section B)
+    TOPIC: ${topic}
+
+    TASK: Create a **High-Yield Exam Cheat Sheet** for this specific topic. The student is memorizing this for an exam.
+    
+    STRUCTURE (Markdown):
+    
+    # 📝 ${topic} - Exam Cheat Sheet
+    
+    ## 1. 🔑 Keywords & Definitions (Verbatim)
+    *List 3-5 definitions that must be memorized word-for-word for marks.*
+    
+    ## 2. ⚡ Core Formulae / Rules
+    *The absolute essentials. If Maths/Physics, show the formula. If English/History, show the key dates or quote.*
+    
+    ## 3. 🧠 The "Golden Thread" (Essay/Long Question Link)
+    *How to link this concept to broader themes for Level 4 (Application) marks.*
+    
+    ## 4. ⚠️ Examiner's Warning
+    *A specific "Don't do this" warning based on common marking errors.*
+    
+    ## 5. 🦁 Mnemonic / Memory Hook
+    *A creative acronym or rhyme to remember the main points.*
+
+    ## 6. 🖼️ Visual Map
+    *IF RELEVANT: Insert a Mermaid Diagram from this library: ${diagramsJson}. If no exact match, create a simple graph TD or mindmap.*
+
+    STYLE: Concise, High-Impact, Memorization-Focused. No fluff.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-pro-preview',
+            contents: prompt,
+            config: {
+                systemInstruction: "You are a helpful, strict, and precise exam coach.",
+                thinkingConfig: { thinkingBudget: 2000 }
+            }
+        });
+        return response.text || "Could not generate notes.";
+    } catch (e) {
+        console.error("Note generation failed", e);
         throw e;
     }
 };
